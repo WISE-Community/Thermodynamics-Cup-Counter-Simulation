@@ -1,0 +1,313 @@
+@font-face {
+   font-family: 'Material Icons';
+   font-style: normal;
+   font-weight: 400;
+   src: url(../images/iconfont/MaterialIcons-Regular.eot); /* For IE6-8 */
+   src: local('Material Icons'),
+        local('MaterialIcons-Regular'),
+        url(../images/iconfont/MaterialIcons-Regular.woff2) format('woff2'),
+        url(../images/iconfont/MaterialIcons-Regular.woff) format('woff'),
+        url(../images/iconfont/MaterialIcons-Regular.ttf) format('truetype');
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Support for IE. */
+  font-feature-settings: 'liga';
+}
+
+#modelDiv {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+}
+
+#secondTimer {
+  position: absolute;
+  left: 0px;
+  top: 20px;
+  opacity: 0;
+}
+
+#totalTimer {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  opacity: 0;
+}
+
+#thermometerDiv {
+  position: absolute;
+  top: 40px;
+  left: 140px;
+}
+
+#temperatureLabelsDiv {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: small;
+  width: 100px;
+}
+
+.thermometerLabel {
+  display: block;
+  width: 100px;
+  height: 15px;
+}
+
+#cupThermometerDiv {
+  position: absolute;
+}
+
+#counterThermometerDiv {
+  position: absolute;
+}
+
+#cupThermometerLabel {
+ position: absolute;
+ top: 0px;
+ left: -3px;
+}
+
+#counterThermometerLabel {
+ position: absolute;
+ top: 0px;
+ left: 45px;
+}
+
+#cupThermometer {
+  position: absolute;
+  top: 20px;
+  left: 0px;
+  z-index: 2;
+}
+
+#cupThermometerRedBar {
+  position: absolute;
+  top: 28px;
+  left: 8px;
+  z-index: 1;
+  -webkit-mask-image: url('../images/thermometerBlankBar.svg');
+  -webkit-mask-position: 0 0px;
+  -webkit-mask-repeat: no-repeat;
+}
+
+#counterThermometer {
+  position: absolute;
+  top: 20px;
+  left: 60px;
+  z-index: 2;
+}
+
+#counterThermometerRedBar {
+  position: absolute;
+  top: 28px;
+  left: 68px;
+  z-index: 1;
+  -webkit-mask-image: url('../images/thermometerBlankBar.svg');
+  -webkit-mask-position: 0 60px;
+  -webkit-mask-repeat: no-repeat;
+}
+
+#cupDiv {
+  position: absolute;
+  top: 70px;
+  left: 49px;
+}
+
+#cupTemperatureReadout {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 2;
+}
+
+#counterDiv {
+  position: absolute;
+  top: 120px;
+  left: 40px;
+}
+
+#counterTemperatureReadout {
+  position: absolute;
+  top: 16px;
+  left: 22px;
+  z-index: 2;
+}
+
+#counterCold {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 2;
+  -webkit-mask-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 1.0) 50%);
+  -webkit-mask-size: 100% 300%;
+  -webkit-mask-position: 0 100%;
+  -webkit-mask-repeat: no-repeat;
+}
+
+#counterWarm {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 1;
+}
+
+#cupHot {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 2;
+  -webkit-mask-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 1.0), rgba(0, 0, 0, 1.0) 55%, rgba(0, 0, 0, 0) 75%);
+  -webkit-mask-size: 100% 200%;
+  -webkit-mask-repeat: no-repeat;
+}
+
+#cupWarm {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 1;
+}
+
+#cupHandle {
+  position: absolute;
+  top: 5px;
+  left: -22px;
+  z-index: 0;
+}
+
+#button {
+  position: absolute;
+  top: 20px;
+  left: 60px;
+  border-radius: 5px;
+  background-color: transparent;
+  outline: none;
+}
+
+.paused {
+  -webkit-animation-play-state: paused !important;
+  -moz-animation-play-state: paused !important;
+  -o-animation-play-state: paused !important;
+  animation-play-state: paused !important;
+}
+
+@-webkit-keyframes cupMovementAnimation {
+  from {
+    top: 70px;
+  }
+  to {
+    top: 82px;
+  }
+}
+
+@-webkit-keyframes cupHeatAnimation {
+  from {
+    -webkit-mask-position: 0 0%;
+  }
+  to {
+    -webkit-mask-position: 0 150%;
+  }
+}
+
+@-webkit-keyframes counterHeatAnimation {
+  from {
+    -webkit-mask-position: 0 100%;
+  }
+  to {
+    -webkit-mask-position: 0 0%;
+  }
+}
+
+@-webkit-keyframes cupThermometerAnimation {
+  0% {
+    -webkit-mask-position: 0 0px;
+  }
+  100% {
+    -webkit-mask-position: 0 45px;
+  }
+}
+
+@-webkit-keyframes counterThermometerAnimation {
+  0% {
+    -webkit-mask-position: 0 60px;
+  }
+  100% {
+    -webkit-mask-position: 0 45px;
+  }
+}
+
+@-webkit-keyframes secondTimer {
+  from {
+    left: 0px;
+  }
+  to {
+    left: 100px;
+  }
+}
+
+@-webkit-keyframes totalTimer {
+  from {
+    left: 0px;
+  }
+  to {
+    left: 100px;
+  }
+}
+
+.cupMovementAnimation {
+  -webkit-animation: cupMovementAnimation 1s;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.cupHeatAnimation {
+  -webkit-animation: cupHeatAnimation 15s;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.counterHeatAnimation {
+  -webkit-animation: counterHeatAnimation 15s;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.cupThermometerAnimation {
+  -webkit-animation: cupThermometerAnimation 15s;
+  -webkit-animation-timing-function: ease-out;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.counterThermometerAnimation {
+  -webkit-animation: counterThermometerAnimation 15s;
+  -webkit-animation-timing-function: ease-out;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.secondTimerAnimation {
+  -webkit-animation: secondTimer 1s;
+  -webkit-animation-iteration-count: infinite;
+}
+
+.totalTimerAnimation {
+  -webkit-animation: totalTimer 16s;
+}
