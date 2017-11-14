@@ -1,5 +1,9 @@
-# Thermodynamics-Cup-Counter-Simulation
+# Thermodynamics Cup Counter Simulation
 A model simulating the heat transfer between a hot cup and a cold counter.
+
+## Demo
+
+https://wise-community.github.io/Thermodynamics-Cup-Counter-Simulation/dist/index.html
 
 ## Development
 
