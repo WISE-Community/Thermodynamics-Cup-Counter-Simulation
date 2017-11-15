@@ -64,7 +64,7 @@ export class AnimationHandler {
     }).rotate(90);
     this.cupMaskRectStartingX = cupX;
     this.cupMaskRectStartingY = cupY;
-    this.cupMaskRect = this.draw.rect(62, 60).fill(cupMaskGradient)
+    this.cupMaskRect = this.draw.rect(62, 44).fill(cupMaskGradient)
         .move(this.cupMaskRectStartingX, this.cupMaskRectStartingY);
     this.cupMask = this.draw.mask().add(this.cupMaskRect);
     this.cupHot.maskWith(this.cupMask);
@@ -111,7 +111,7 @@ export class AnimationHandler {
       stop.at(1, 'white')
     }).rotate(90);
     this.counterMaskRectStartingX = counterX;
-    this.counterMaskRectStartingY = counterY - 10;
+    this.counterMaskRectStartingY = counterY - 6;
     this.counterMaskRect = this.draw.rect(80, 80).fill(counterGradient)
         .move(this.counterMaskRectStartingX, this.counterMaskRectStartingY);
     this.counterCold.maskWith(this.counterMaskRect);
@@ -147,7 +147,7 @@ export class AnimationHandler {
      * mercury.
      */
     this.cupThermometerMaskRectStartingX = cupThermometerX + 7;
-    this.cupThermometerMaskRectStartingY = cupThermometerY + 10;
+    this.cupThermometerMaskRectStartingY = cupThermometerY + 5;
     this.cupThermometerMaskRect = this.draw.rect(9, 70).fill('white')
         .move(this.cupThermometerMaskRectStartingX, this.cupThermometerMaskRectStartingY);
     this.cupThermometerMask = this.draw.mask().add(this.cupThermometerMaskRect);
@@ -184,7 +184,7 @@ export class AnimationHandler {
      * mercury.
      */
     this.counterThermometerMaskRectStartingX = counterThermometerX + 7;
-    this.counterThermometerMaskRectStartingY = counterThermometerY + 70;
+    this.counterThermometerMaskRectStartingY = counterThermometerY + 68;
     this.counterThermometerMaskRect = this.draw.rect(9, 70).fill('white')
         .move(this.counterThermometerMaskRectStartingX, this.counterThermometerMaskRectStartingY);
     this.counterThermometerMask = this.draw.mask().add(this.counterThermometerMaskRect);
@@ -202,7 +202,7 @@ export class AnimationHandler {
   createThermometerTemperatureMarks() {
     let text = ' - 60\u00B0C - \n - 50\u00B0C -  \n - 40\u00B0C -  \n - 30\u00B0C -  \n - 20\u00B0C - ';
     this.temperatureLabels = this.draw.text(text);
-    this.temperatureLabels.move(161, 73);
+    this.temperatureLabels.move(162, 70);
     this.temperatureLabels.font(this.getFontObject(12));
   }
 
@@ -219,7 +219,6 @@ export class AnimationHandler {
    * Start the animation that lowers the cup onto the counter.
    */
   startCupLowering() {
-
     this.dataPointHandler.initializeTrial();
 
     // send the initial temperature data points to WISE
@@ -231,6 +230,26 @@ export class AnimationHandler {
   }
 
   /**
+   * Generate a function that scales the cup position.
+   */
+  generateCupThermometerEasingFunction() {
+    let thisDataPointHandler = this.dataPointHandler;
+    return (pos) => {
+      return thisDataPointHandler.getScaledCupPos(pos);
+    };
+  }
+
+  /**
+   * Generate a function that scales the counter position.
+   */
+  generateCounterThermometerEasingFunction() {
+    let thisDataPointHandler = this.dataPointHandler;
+    return (pos) => {
+      return thisDataPointHandler.getScaledCounterPos(pos);
+    };
+  }
+
+  /**
    * Start the heat transfer animation on the cup and counter.
    */
   startHeatTransfer() {
@@ -238,13 +257,15 @@ export class AnimationHandler {
     let animationDurationSeconds = 15;
     let animationDurationMilliseconds = animationDurationSeconds * 1000;
     this.cupHeatAnimation = this.cupMaskRect
-        .animate(animationDurationMilliseconds).move(50, 0);
+        .animate(animationDurationMilliseconds).move(this.cupMaskRectStartingX, 18);
     this.counterHeatAnimation = this.counterMaskRect
-        .animate(animationDurationMilliseconds).move(42, 170);
+        .animate(animationDurationMilliseconds).move(this.counterMaskRectStartingX, 170);
     this.cupThermometerAnimation = this.cupThermometerMaskRect
-        .animate(animationDurationMilliseconds).move(147, 125);
+        .animate(animationDurationMilliseconds,
+            this.generateCupThermometerEasingFunction()).move(147, 122);
     this.counterThermometerAnimation = this.counterThermometerMaskRect
-        .animate(animationDurationMilliseconds).move(207, 125);
+        .animate(animationDurationMilliseconds,
+            this.generateCounterThermometerEasingFunction()).move(207, 122);
 
     /*
      * This array will be used to hold all the animations associated with the
