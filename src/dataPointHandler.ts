@@ -95,27 +95,6 @@ export class DataPointHandler {
   }
 
   /**
-   * Send the intial temperatures to WISE so that the graph immediately displays
-   * the temperatures at time 0. This function is only called when the model
-   * has finished running and is being reset.
-   */
-  intializeAndSendTrial() {
-    // intialize the trial to clear out all of its data points
-    this.trial.initializeTrial();
-
-    // send the temperatures at time 0
-    this.updateAndSendTrial(0);
-
-    /*
-     * Initialize the trial again. We need to do this because when the model
-     * starts running, it will call sendTemperatures(0). We do not want our
-     * previous call to sendTemperatures(0) right above this to persists because
-     * then we will have called sendTemperatures(0) two times in a row.
-     */
-    this.trial.initializeTrial();
-  }
-
-  /**
    * Update the trial and send it to WISE.
    * @param time Add the temperatures for this time point.
    */

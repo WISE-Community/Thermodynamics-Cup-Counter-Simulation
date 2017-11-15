@@ -61,17 +61,7 @@ export class CupCounterModel {
     // move all the images back to their original positions and states
     this.animationHandler.resetAnimations();
 
-    /*
-     * We need to call startCupLowering() after a timeout in order to allow the
-     * .cupMovementAnimation class on the #cupDiv to be removed and then added
-     * back. If we do not use a timeout, we will be calling
-     * $('#cupDiv').removeClass('cupMovementAnimation'); in resetAnimations()
-     * and then immediately calling
-     * $('#cupDiv').addClass('cupMovementAnimation'); in startCupLowering()
-     * which prevents the browser from digesting the removeClass() call which
-     * will lead to the #cupDiv never being reset to its original position.
-     */
-    setTimeout(this.animationHandler.startCupLowering, 1);
+    this.animationHandler.startCupLowering();
   }
 
   /**
