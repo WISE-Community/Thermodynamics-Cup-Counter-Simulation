@@ -1,5 +1,6 @@
 import { DataPointHandler } from './dataPointHandler';
 import * as $ from 'jquery';
+import * as SVG from 'svg.js';
 
 /**
  * The class that moves and animates images.
@@ -15,12 +16,6 @@ export class AnimationHandler {
   // keeps track of the time in integer seconds
   time: number;
 
-  /*
-   * A flag that is used to determine whether we need to auto resume the model
-   * when the user gives focus back to the browser tab.
-   */
-  resumeOnFocus: boolean = false;
-
   /**
    * Constructor that sets up event listeners.
    * @param cupCounterModel The cup counter model.
@@ -29,113 +24,306 @@ export class AnimationHandler {
     this.time = 0;
     this.cupCounterModel = cupCounterModel;
     this.dataPointHandler = new DataPointHandler();
+    this.heatAnimations = [];
+    this.draw = SVG('modelDiv').size(300, 200);
+    this.createCup();
+    this.createCounter();
+    this.createCupThermometer();
+    this.createCounterThermometer();
+    this.createThermometerTemperatureMarks();
+  }
+
+  /**
+   * Create the cup which consists of the handle, the warm cup, the hot cup,
+   * the hot cup mask, and the cup temperature display.
+   */
+  createCup() {
+    let cupX = 50;
+    let cupY = 70;
+    let cupHandleX = cupX - 22;
+    let cupHandleY = cupY + 3;
+    this.cupHandle = this.draw.image('./images/cupHandle.svg').move(cupHandleX, cupHandleY);
+    this.cupWarm = this.draw.image('./images/cupWarm.svg').move(cupX, cupY);
+    this.cupHot = this.draw.image('./images/cupHot.svg').move(cupX, cupY);
+
+    // create the text that displays the temperature on the cup
+    let cupTemperatureDisplayX = cupX + 12;
+    let cupTemperatureDisplayY = cupY + 10;
+    this.cupTemperatureDisplay = this.draw.text('60\u00B0C')
+        .move(cupTemperatureDisplayX, cupTemperatureDisplayY);
+    this.cupTemperatureDisplay.font(this.getFontObject(16));
 
     /*
-     * Create local references to these objects so that they can be used in the
-     * event handlers.
+     * Create the hot cup mask that we will use to slowly wipe away the hot cup
+     * which will then reveal the warm cup.
      */
-    let thisAnimationHandler = this;
-    let thisCupCounterModel = this.cupCounterModel;
-    let thisDataPointHandler = this.dataPointHandler;
+    let cupMaskGradient = this.draw.gradient('linear', (stop) => {
+      stop.at(0, 'white')
+      stop.at(0.9, 'white')
+      stop.at(1, 'black')
+    }).rotate(90);
+    this.cupMaskRectStartingX = cupX;
+    this.cupMaskRectStartingY = cupY;
+    this.cupMaskRect = this.draw.rect(62, 44).fill(cupMaskGradient)
+        .move(this.cupMaskRectStartingX, this.cupMaskRectStartingY);
+    this.cupMask = this.draw.mask().add(this.cupMaskRect);
+    this.cupHot.maskWith(this.cupMask);
 
-    $('#cupDiv').on('animationend', function(e) {
-      if (e.originalEvent.animationName == 'cupMovementAnimation') {
-        // the cup has finished moving down onto the counter
+    /*
+     * Put all the elements into a group so that we can move them all at once
+     * when we lower the cup.
+     */
+    this.cupGroup = this.draw.group();
+    this.cupGroup.add(this.cupHandle);
+    this.cupGroup.add(this.cupWarm);
+    this.cupGroup.add(this.cupHot);
+    this.cupGroup.add(this.cupTemperatureDisplay);
+    this.cupGroupStartingX = this.cupGroup.x();
+    this.cupGroupStartingY = this.cupGroup.y();
+  }
 
-        // set the time counter to 0
-        thisAnimationHandler.resetTimeCounter();
+  /**
+   * Create the counter which consists of the warm counter, the hot counter, the
+   * hot counter mask, and the counter temperature display.
+   */
+  createCounter() {
+    let counterX = 42;
+    let counterY = 120;
+    this.counterWarm = this.draw.image('./images/counterWarm.svg')
+        .move(counterX, 120);
+    this.counterCold = this.draw.image('./images/counterCold.svg')
+        .move(counterX, 120);
 
-        // send the initial temperature data points to WISE
-        thisDataPointHandler.intializeAndSendTrial();
+    // create the text that displays the temperature on the counter
+    let counterTemperatureDisplayX = counterX + 20;
+    let counterTemperatureDisplayY = counterY + 16;
+    this.counterTemperatureDisplay = this.draw.text('20\u00B0C')
+        .move(counterTemperatureDisplayX, counterTemperatureDisplayY);
+    this.counterTemperatureDisplay.font(this.getFontObject(16));
 
-        // start the heat transfer animations on the cup and the counter
-        thisAnimationHandler.startHeatTransfer();
-      }
-    });
+    /*
+     * Create the cold counter mask that we will use to slowly wipe away the
+     * cold counter which will then reveal the warm counter.
+     */
+    let counterGradient = this.draw.gradient('linear', (stop) => {
+      stop.at(0, 'black')
+      stop.at(0.1, 'white')
+      stop.at(1, 'white')
+    }).rotate(90);
+    this.counterMaskRectStartingX = counterX;
+    this.counterMaskRectStartingY = counterY - 6;
+    this.counterMaskRect = this.draw.rect(80, 80).fill(counterGradient)
+        .move(this.counterMaskRectStartingX, this.counterMaskRectStartingY);
+    this.counterCold.maskWith(this.counterMaskRect);
+  }
 
-    $('#totalTimer').on('animationend', function() {
-      /*
-       * the 16 second timer has finished. we use an invisible element and
-       * animate it to know when all the animations should be done.
-       */
+  /**
+   * Create the cup thermometer which consists of the thermometer, the red
+   * mercury, the mercury mask, and the text label.
+   */
+  createCupThermometer() {
+    let cupThermometerX = 140;
+    let cupThermometerY = 70;
 
-      // stop moving the second timer
-      $('#secondTimer').removeClass('secondTimerAnimation');
+    // the text label above the Cup thermometer
+    let cupThermometerTextX = cupThermometerX;
+    let cupThermometerTextY = cupThermometerY - 14;
+    this.cupThermometerText = this.draw.text('Cup');
+    this.cupThermometerText.move(cupThermometerTextX, cupThermometerTextY);
+    this.cupThermometerText.font(this.getFontObject(14));
 
-      // tell the model the animations are finished and everything should stop
-      thisCupCounterModel.setCompleted();
-    });
+    // the mercury
+    let cupThermometerRedBarX = cupThermometerX + 8;
+    let cupThermometerRedBarY = cupThermometerY + 3;
+    this.cupThermometerRedBar = this.draw.image('./images/thermometerRedBar.svg')
+        .move(cupThermometerRedBarX, cupThermometerRedBarY);
 
-    $('#secondTimer').on('animationiteration', function() {
-      // this gets called once a second while the animations are running
+    // the thermometer
+    this.cupThermometer = this.draw.image('./images/thermometer.svg')
+        .move(cupThermometerX, cupThermometerY);
 
-      // send the updated trial to WISE
-      thisDataPointHandler.updateAndSendTrial(thisAnimationHandler.getTimeCounter());
+    /*
+     * The mask for the mercury that we will use to change the height of the
+     * mercury.
+     */
+    this.cupThermometerMaskRectStartingX = cupThermometerX + 7;
+    this.cupThermometerMaskRectStartingY = cupThermometerY + 5;
+    this.cupThermometerMaskRect = this.draw.rect(9, 70).fill('white')
+        .move(this.cupThermometerMaskRectStartingX, this.cupThermometerMaskRectStartingY);
+    this.cupThermometerMask = this.draw.mask().add(this.cupThermometerMaskRect);
+    this.cupThermometerRedBar.maskWith(this.cupThermometerMask);
+  }
 
-      // update the temperatures displayed on the cup and counter
-      let time = thisAnimationHandler.getTimeCounter();
-      let cupTemperature = thisDataPointHandler.getCupTemperature(time);
-      let counterTemperature = thisDataPointHandler.getCounterTemperature(time);
-      thisAnimationHandler.setCupTemperatureReadout(cupTemperature);
-      thisAnimationHandler.setCounterTemperatureReadout(counterTemperature);
-      thisAnimationHandler.incrementTimeCounter();
-    });
+  /**
+   * Create the counter thermometer which consists of the thermometer, the red
+   * mercury, the mercury mask, and the text label.
+   */
+  createCounterThermometer() {
+    let counterThermometerX = 200;
+    let counterThermometerY = 70;
 
-    $(window).blur(function() {
-      /*
-       * The tab has lost focus because the user has switched to another tab or
-       * application.
-       */
-      if (thisCupCounterModel.isStatePlaying()) {
-        /*
-         * The model is currently playing so we will pause it while the user
-         * is not viewing the model.
-         */
-        thisCupCounterModel.pause();
+    // the text label above the counter thermometer
+    let counterThermometerTextX = counterThermometerX - 10;
+    let counterThermometerTextY = counterThermometerY - 14;
+    this.counterThermometerText = this.draw.text('Counter');
+    this.counterThermometerText.move(counterThermometerTextX, counterThermometerTextY);
+    this.counterThermometerText.font(this.getFontObject(14));
 
-        /*
-         * Set the flag so that we know to automatically resume the model when
-         * we regain focus.
-         */
-        thisAnimationHandler.resumeOnFocus = true;
-      }
-    });
+    // the mercury
+    let counterThermometerRedBarX = counterThermometerX + 8;
+    let counterThermometerRedBarY = counterThermometerY + 3;
+    this.counterThermometerRedBar = this.draw.image('./images/thermometerRedBar.svg')
+        .move(counterThermometerRedBarX, counterThermometerRedBarY);
 
-    $(window).focus(function() {
-      // The tab has regained focus.
-      if (thisAnimationHandler.resumeOnFocus) {
-        /*
-         * The model we previously playing when it lost focus so we will
-         * automatically resume the model now.
-         */
-        thisCupCounterModel.resume();
-        thisAnimationHandler.resumeOnFocus = false;
-      }
-    });
+    // the thermometer
+    this.counterThermometer = this.draw.image('./images/thermometer.svg')
+        .move(counterThermometerX, counterThermometerY);
+
+    /*
+     * The mask for the mercury that we will use to change the height of the
+     * mercury.
+     */
+    this.counterThermometerMaskRectStartingX = counterThermometerX + 7;
+    this.counterThermometerMaskRectStartingY = counterThermometerY + 68;
+    this.counterThermometerMaskRect = this.draw.rect(9, 70).fill('white')
+        .move(this.counterThermometerMaskRectStartingX, this.counterThermometerMaskRectStartingY);
+    this.counterThermometerMask = this.draw.mask().add(this.counterThermometerMaskRect);
+    this.counterThermometerRedBar.maskWith(this.counterThermometerMask);
+  }
+
+  /**
+   * Create the temperature markings for the thermometers that looks like
+   * - 60°C -
+   * - 50°C -
+   * - 40°C -
+   * - 30°C -
+   * - 20°C -
+   */
+  createThermometerTemperatureMarks() {
+    let text = ' - 60\u00B0C - \n - 50\u00B0C -  \n - 40\u00B0C -  \n - 30\u00B0C -  \n - 20\u00B0C - ';
+    this.temperatureLabels = this.draw.text(text);
+    this.temperatureLabels.move(162, 70);
+    this.temperatureLabels.font(this.getFontObject(12));
+  }
+
+  /**
+   * Get an object that contains specifications for a font.
+   * @param size The font size.
+   * @return A object containing font attributes.
+   */
+  getFontObject(size) {
+    return { size: size, family: 'Times New Roman' };
   }
 
   /**
    * Start the animation that lowers the cup onto the counter.
    */
   startCupLowering() {
-    $('#cupDiv').addClass('cupMovementAnimation');
+    this.dataPointHandler.initializeTrial();
+
+    // send the initial temperature data points to WISE
+    this.updateTemperatures();
+
+    this.cupMovementAnimation = this.cupGroup.animate(1000).move(0, 12).after(() => {
+      this.startHeatTransfer();
+    });
+  }
+
+  /**
+   * Generate a function that scales the cup position.
+   */
+  generateCupThermometerEasingFunction() {
+    let thisDataPointHandler = this.dataPointHandler;
+    return (pos) => {
+      return thisDataPointHandler.getScaledCupPos(pos);
+    };
+  }
+
+  /**
+   * Generate a function that scales the counter position.
+   */
+  generateCounterThermometerEasingFunction() {
+    let thisDataPointHandler = this.dataPointHandler;
+    return (pos) => {
+      return thisDataPointHandler.getScaledCounterPos(pos);
+    };
   }
 
   /**
    * Start the heat transfer animation on the cup and counter.
    */
   startHeatTransfer() {
-    // start the heat transfer on the cup and counter
-    $('#cupHot').addClass('cupHeatAnimation');
-    $('#counterCold').addClass('counterHeatAnimation');
+    // animate the heat on the cup, counter, and thermometers
+    let animationDurationSeconds = 15;
+    let animationDurationMilliseconds = animationDurationSeconds * 1000;
+    this.cupHeatAnimation = this.cupMaskRect
+        .animate(animationDurationMilliseconds).move(this.cupMaskRectStartingX, 18);
+    this.counterHeatAnimation = this.counterMaskRect
+        .animate(animationDurationMilliseconds).move(this.counterMaskRectStartingX, 170);
+    this.cupThermometerAnimation = this.cupThermometerMaskRect
+        .animate(animationDurationMilliseconds,
+            this.generateCupThermometerEasingFunction()).move(147, 122);
+    this.counterThermometerAnimation = this.counterThermometerMaskRect
+        .animate(animationDurationMilliseconds,
+            this.generateCounterThermometerEasingFunction()).move(207, 122);
 
-    // start moving the mercury in the thermometers
-    $('#cupThermometerRedBar').addClass('cupThermometerAnimation');
-    $('#counterThermometerRedBar').addClass('counterThermometerAnimation');
+    /*
+     * This array will be used to hold all the animations associated with the
+     * heat transfer. We will use it for pausing and resuming.
+     */
+    this.heatAnimations = [];
+    this.heatAnimations.push(this.cupHeatAnimation);
+    this.heatAnimations.push(this.counterHeatAnimation);
+    this.heatAnimations.push(this.cupThermometerAnimation);
+    this.heatAnimations.push(this.counterThermometerAnimation);
 
-    // start moving our hidden timers
-    $('#secondTimer').addClass('secondTimerAnimation');
-    $('#totalTimer').addClass('totalTimerAnimation');
+    /*
+     * Add a callback after each second so we can update the temperatures and
+     * send them to WISE. The way this works is that the cupHeatAnimation.once()
+     * takes in a value from 0 to 1 where 0 represents the beginning of its
+     * animation and 1 represents the end of its animation. We split up this
+     * total animation time into 15 segments. Note that 1/15 = 0.0625.
+     * Therefore we are calling
+     * this.cupHeatAnimation.once(0)
+     * this.cupHeatAnimation.once(0.0625)
+     * this.cupHeatAnimation.once(0.1333)
+     * this.cupHeatAnimation.once(0.2)
+     * this.cupHeatAnimation.once(0.2666)
+     * this.cupHeatAnimation.once(0.3333)
+     * ...
+     * this.cupHeatAnimation.once(1)
+     */
+    for (let t = 0; t <= animationDurationSeconds; t++) {
+      this.cupHeatAnimation.once(t * (1/animationDurationSeconds), () => {
+        this.incrementTimeCounter();
+
+        /*
+         * Update the temperature displays and also send the temperatures to
+         * WISE.
+         */
+        this.updateTemperatures();
+      });
+    }
+
+    this.cupHeatAnimation.after(() => {
+      // the animation has completed so we will tell the model we are done
+      this.cupCounterModel.setCompleted();
+    });
+  }
+
+  /**
+   * Update the temperatures on the display and send them to WISE.
+   */
+  updateTemperatures() {
+    // send the updated trial to WISE
+    this.dataPointHandler.updateAndSendTrial(this.getTimeCounter());
+
+    // update the temperatures displayed on the cup and counter
+    let time = this.getTimeCounter();
+    let cupTemperature = this.dataPointHandler.getCupTemperature(time);
+    let counterTemperature = this.dataPointHandler.getCounterTemperature(time);
+    this.setCupTemperatureReadout(cupTemperature);
+    this.setCounterTemperatureReadout(counterTemperature);
   }
 
   /**
@@ -165,59 +353,109 @@ export class AnimationHandler {
    * Pause all the elements in the model.
    */
   pause() {
-    $('#cupDiv').addClass('paused');
-    $('#cupHot').addClass('paused');
-    $('#counterCold').addClass('paused');
-    $('#cupThermometerRedBar').addClass('paused');
-    $('#counterThermometerRedBar').addClass('paused');
-    $('#secondTimer').addClass('paused');
-    $('#totalTimer').addClass('paused');
+    if (this.heatAnimations.length == 0) {
+      // we are in the cup movement phase
+      this.cupMovementAnimation.pause();
+    } else {
+      // we are in the heat transfer phase
+      for (let animation of this.heatAnimations) {
+        animation.pause();
+      }
+    }
   }
 
   /**
    * Resume animating all the elements in the model.
    */
   resume() {
-    $('#cupDiv').removeClass('paused');
-    $('#cupHot').removeClass('paused');
-    $('#counterCold').removeClass('paused');
-    $('#cupThermometerRedBar').removeClass('paused');
-    $('#counterThermometerRedBar').removeClass('paused');
-    $('#secondTimer').removeClass('paused');
-    $('#totalTimer').removeClass('paused');
+    if (this.heatAnimations.length == 0) {
+      // we are in the cup movement phase
+      this.cupMovementAnimation.play();
+    } else {
+      // we are in the heat transfer phase
+      for (let animation of this.heatAnimations) {
+        animation.play();
+      }
+    }
   }
 
   /**
    * Reset all the elements back to their original positions and states.
    */
   resetAnimations() {
-    $('#cupDiv').removeClass('cupMovementAnimation');
-    $('#cupHot').removeClass('cupHeatAnimation');
-    $('#counterCold').removeClass('counterHeatAnimation');
-    $('#cupThermometerRedBar').removeClass('cupThermometerAnimation');
-    $('#counterThermometerRedBar').removeClass('counterThermometerAnimation');
-    $('#secondTimer').removeClass('secondTimerAnimation');
-    $('#totalTimer').removeClass('totalTimerAnimation');
+    // set the time back to 0
+    this.resetTimeCounter();
+
+    // reset all the animations
+    this.resetCupPosition();
+    this.resetCupHeatMask();
+    this.resetCounterHeatMask();
+    this.resetCupThermometerMask();
+    this.resetCounterThermometerMask();
 
     /*
      * Set the cup and counter temperature displays back to their starting
      * temperatures.
      */
-    this.setCupTemperatureReadout(this.dataPointHandler.getCupTemperature(0));
-    this.setCounterTemperatureReadout(this.dataPointHandler.getCounterTemperature(0));
+    let time = this.getTimeCounter();
+    this.setCupTemperatureReadout(this.dataPointHandler.getCupTemperature(time));
+    this.setCounterTemperatureReadout(this.dataPointHandler.getCounterTemperature(time));
   }
 
   /**
-   * Set the cup temperature that's actually displayed on the cup.
+   * Set the cup back to its starting position.
+   */
+  resetCupPosition() {
+    this.cupGroup.move(this.cupGroupStartingX, this.cupGroupStartingY);
+  }
+
+  /**
+   * Set the cup heat mask back to its starting position so that the hot cup
+   * is fully displayed.
+   */
+  resetCupHeatMask() {
+    this.cupMaskRect
+        .move(this.cupMaskRectStartingX, this.cupMaskRectStartingY);
+  }
+
+  /**
+   * Set the counter heat mask back to its starting position so that the cold
+   * counter is fully displayed.
+   */
+  resetCounterHeatMask() {
+    this.counterMaskRect
+        .move(this.counterMaskRectStartingX, this.counterMaskRectStartingY);
+  }
+
+  /**
+   * Set the cup thermometer mask back to its starting position so that the
+   * thermometer is at 60C.
+   */
+  resetCupThermometerMask() {
+    this.cupThermometerMaskRect
+        .move(this.cupThermometerMaskRectStartingX, this.cupThermometerMaskRectStartingY);
+  }
+
+  /**
+   * Set the counter thermometer mask back to its starting position so that the
+   * thermometer is at 20C.
+   */
+  resetCounterThermometerMask() {
+    this.counterThermometerMaskRect
+        .move(this.counterThermometerMaskRectStartingX, this.counterThermometerMaskRectStartingY);
+  }
+
+  /**
+   * Set the cup temperature that is displayed on the cup.
    */
   setCupTemperatureReadout(temp) {
-    $('#cupTemperatureReadout').html(Math.floor(temp) + '&#8451;');
+    this.cupTemperatureDisplay.text(Math.floor(temp) + '\u00B0C');
   }
 
   /**
-   * Set the counter temperature that's actually displayed on the counter.
+   * Set the counter temperature that is displayed on the counter.
    */
   setCounterTemperatureReadout(temp) {
-    $('#counterTemperatureReadout').html(Math.floor(temp) + '&#8451;');
+    this.counterTemperatureDisplay.text(Math.floor(temp) + '\u00B0C');
   }
 }
