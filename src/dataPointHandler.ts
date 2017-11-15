@@ -26,6 +26,13 @@ export class DataPointHandler {
   }
 
   /**
+   * Initialize the trial by clearing out the data in it.
+   */
+  initializeTrial() {
+    this.trial.initialize();
+  }
+
+  /**
    * Get the cup temperature at a specific time.
    * @param time The time we want the data point for. This will be an integer.
    * @return An array containing the time and temperature like

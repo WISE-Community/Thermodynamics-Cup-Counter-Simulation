@@ -10,13 +10,13 @@ export class Trial {
   series: object[];
 
   constructor() {
-    this.initializeTrial();
+    this.initialize();
   }
 
   /**
    * Initialize the series in the trial.
    */
-  initializeTrial() {
+  initialize() {
     this.trial = {};
     this.trial.name = 'Cup and Counter Temperatures';
     this.trial.series = [];

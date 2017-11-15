@@ -62,8 +62,10 @@ export class AnimationHandler {
       stop.at(0.9, 'white')
       stop.at(1, 'black')
     }).rotate(90);
+    this.cupMaskRectStartingX = cupX;
+    this.cupMaskRectStartingY = cupY;
     this.cupMaskRect = this.draw.rect(62, 60).fill(cupMaskGradient)
-        .move(cupX, cupY);
+        .move(this.cupMaskRectStartingX, this.cupMaskRectStartingY);
     this.cupMask = this.draw.mask().add(this.cupMaskRect);
     this.cupHot.maskWith(this.cupMask);
 
@@ -76,6 +78,8 @@ export class AnimationHandler {
     this.cupGroup.add(this.cupWarm);
     this.cupGroup.add(this.cupHot);
     this.cupGroup.add(this.cupTemperatureDisplay);
+    this.cupGroupStartingX = this.cupGroup.x();
+    this.cupGroupStartingY = this.cupGroup.y();
   }
 
   /**
@@ -106,11 +110,11 @@ export class AnimationHandler {
       stop.at(0.1, 'white')
       stop.at(1, 'white')
     }).rotate(90);
-    let counterRectX = counterX;
-    let counterRectY = counterY - 10;
-    this.counterRect = this.draw.rect(80, 80).fill(counterGradient)
-        .move(counterRectX, counterRectY);
-    this.counterCold.maskWith(this.counterRect);
+    this.counterMaskRectStartingX = counterX;
+    this.counterMaskRectStartingY = counterY - 10;
+    this.counterMaskRect = this.draw.rect(80, 80).fill(counterGradient)
+        .move(this.counterMaskRectStartingX, this.counterMaskRectStartingY);
+    this.counterCold.maskWith(this.counterMaskRect);
   }
 
   /**
@@ -142,11 +146,11 @@ export class AnimationHandler {
      * The mask for the mercury that we will use to change the height of the
      * mercury.
      */
-    let cupThermometerRectX = cupThermometerX + 7;
-    let cupThermometerRectY = cupThermometerY + 10;
-    this.cupThermometerRect = this.draw.rect(9, 70).fill('white')
-        .move(cupThermometerRectX, cupThermometerRectY);
-    this.cupThermometerMask = this.draw.mask().add(this.cupThermometerRect);
+    this.cupThermometerMaskRectStartingX = cupThermometerX + 7;
+    this.cupThermometerMaskRectStartingY = cupThermometerY + 10;
+    this.cupThermometerMaskRect = this.draw.rect(9, 70).fill('white')
+        .move(this.cupThermometerMaskRectStartingX, this.cupThermometerMaskRectStartingY);
+    this.cupThermometerMask = this.draw.mask().add(this.cupThermometerMaskRect);
     this.cupThermometerRedBar.maskWith(this.cupThermometerMask);
   }
 
@@ -179,11 +183,11 @@ export class AnimationHandler {
      * The mask for the mercury that we will use to change the height of the
      * mercury.
      */
-    let counterThermometerRectX = counterThermometerX + 7;
-    let counterThermometerRectY = counterThermometerY + 70;
-    this.counterThermometerRect = this.draw.rect(9, 70).fill('white')
-        .move(counterThermometerRectX, counterThermometerRectY);
-    this.counterThermometerMask = this.draw.mask().add(this.counterThermometerRect);
+    this.counterThermometerMaskRectStartingX = counterThermometerX + 7;
+    this.counterThermometerMaskRectStartingY = counterThermometerY + 70;
+    this.counterThermometerMaskRect = this.draw.rect(9, 70).fill('white')
+        .move(this.counterThermometerMaskRectStartingX, this.counterThermometerMaskRectStartingY);
+    this.counterThermometerMask = this.draw.mask().add(this.counterThermometerMaskRect);
     this.counterThermometerRedBar.maskWith(this.counterThermometerMask);
   }
 
@@ -215,6 +219,9 @@ export class AnimationHandler {
    * Start the animation that lowers the cup onto the counter.
    */
   startCupLowering() {
+
+    this.dataPointHandler.initializeTrial();
+
     // send the initial temperature data points to WISE
     this.updateTemperatures();
 
@@ -232,11 +239,11 @@ export class AnimationHandler {
     let animationDurationMilliseconds = animationDurationSeconds * 1000;
     this.cupHeatAnimation = this.cupMaskRect
         .animate(animationDurationMilliseconds).move(50, 0);
-    this.counterHeatAnimation = this.counterRect
+    this.counterHeatAnimation = this.counterMaskRect
         .animate(animationDurationMilliseconds).move(42, 170);
-    this.cupThermometerAnimation = this.cupThermometerRect
+    this.cupThermometerAnimation = this.cupThermometerMaskRect
         .animate(animationDurationMilliseconds).move(147, 125);
-    this.counterThermometerAnimation = this.counterThermometerRect
+    this.counterThermometerAnimation = this.counterThermometerMaskRect
         .animate(animationDurationMilliseconds).move(207, 125);
 
     /*
@@ -358,6 +365,13 @@ export class AnimationHandler {
     // set the time back to 0
     this.resetTimeCounter();
 
+    // reset all the animations
+    this.resetCupPosition();
+    this.resetCupHeatMask();
+    this.resetCounterHeatMask();
+    this.resetCupThermometerMask();
+    this.resetCounterThermometerMask();
+
     /*
      * Set the cup and counter temperature displays back to their starting
      * temperatures.
@@ -365,6 +379,49 @@ export class AnimationHandler {
     let time = this.getTimeCounter();
     this.setCupTemperatureReadout(this.dataPointHandler.getCupTemperature(time));
     this.setCounterTemperatureReadout(this.dataPointHandler.getCounterTemperature(time));
+  }
+
+  /**
+   * Set the cup back to its starting position.
+   */
+  resetCupPosition() {
+    this.cupGroup.move(this.cupGroupStartingX, this.cupGroupStartingY);
+  }
+
+  /**
+   * Set the cup heat mask back to its starting position so that the hot cup
+   * is fully displayed.
+   */
+  resetCupHeatMask() {
+    this.cupMaskRect
+        .move(this.cupMaskRectStartingX, this.cupMaskRectStartingY);
+  }
+
+  /**
+   * Set the counter heat mask back to its starting position so that the cold
+   * counter is fully displayed.
+   */
+  resetCounterHeatMask() {
+    this.counterMaskRect
+        .move(this.counterMaskRectStartingX, this.counterMaskRectStartingY);
+  }
+
+  /**
+   * Set the cup thermometer mask back to its starting position so that the
+   * thermometer is at 60C.
+   */
+  resetCupThermometerMask() {
+    this.cupThermometerMaskRect
+        .move(this.cupThermometerMaskRectStartingX, this.cupThermometerMaskRectStartingY);
+  }
+
+  /**
+   * Set the counter thermometer mask back to its starting position so that the
+   * thermometer is at 20C.
+   */
+  resetCounterThermometerMask() {
+    this.counterThermometerMaskRect
+        .move(this.counterThermometerMaskRectStartingX, this.counterThermometerMaskRectStartingY);
   }
 
   /**
