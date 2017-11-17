@@ -10,6 +10,8 @@ export class Trial {
   series: object[];
 
   constructor() {
+    // get the current time in milliseconds to use as our trial id
+    this.id = new Date().getTime();
     this.initialize();
   }
 
@@ -18,6 +20,13 @@ export class Trial {
    */
   initialize() {
     this.trial = {};
+
+    /*
+     * Always use the same trial id so that when the student runs the model
+     * again, the previous data points will be erased and the data points will
+     * be drawn again as the model runs.
+     */
+    this.trial.id = this.id;
     this.trial.name = 'Cup and Counter Temperatures';
     this.trial.series = [];
     this.trial.series.push(this.createSeries('Cup', 'red', 'circle'));
