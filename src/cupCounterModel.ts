@@ -1,11 +1,15 @@
 import { AnimationHandler } from './animationHandler';
 import { Button } from './button';
+import { parseURLParameters } from "./util";
 import * as $ from 'jquery';
 
 /**
  * The class that orchestrates the model interactions and animations.
  */
 export class CupCounterModel {
+
+  // the url GET parameters, if any
+  parameters: any;
 
   /*
    * the state of the model which can be
@@ -20,6 +24,9 @@ export class CupCounterModel {
   button: object;
 
   constructor() {
+    // set the url parameters if there are any
+    this.parameters = parseURLParameters();
+    this.setParameters(this.parameters);
     this.state = 'initialized';
     this.animationHandler = new AnimationHandler(this);
     this.button = new Button(this);
@@ -53,7 +60,19 @@ export class CupCounterModel {
   }
 
   /**
-   * Restart the model and begin playing from the beginning.
+   * Reset the model back to its initial state.
+   */
+  reset() {
+    this.setState('initialized');
+
+    this.animationHandler.stopAnimations();
+
+    // move all the images back to their original positions and states
+    this.animationHandler.resetAnimations();
+  }
+
+  /**
+   * Reset the model and begin playing from the beginning.
    */
   restart() {
     this.setState('playing');
@@ -95,6 +114,31 @@ export class CupCounterModel {
    */
   setCompleted() {
     this.state = 'completed';
-    this.button.showRestartButton();
+    this.button.modelCompleted();
+    this.animationHandler.modelCompleted();
+  }
+
+  /**
+   * Set the url parameters if there are any.
+   * @parameters An object with key value pairs.
+   */
+  setParameters(parameters) {
+    let top = parameters.top;
+    let left = parameters.left;
+    if (top != null) {
+      // position the model vertically from the top of the screen
+      $('#modelDiv').css('top', top);
+      let buttonsTop = top + 20;
+      $('#playPauseButton').css('top', buttonsTop);
+      $('#resetButton').css('top', buttonsTop);
+    }
+    if (left != null) {
+      // position the model horizontally from the left of the screen
+      $('#modelDiv').css('left', left);
+      let playPauseButtonLeft = left + 35;
+      let resetButtonLeft = left + 85;
+      $('#playPauseButton').css('left', playPauseButtonLeft);
+      $('#resetButton').css('left', resetButtonLeft);
+    }
   }
 }

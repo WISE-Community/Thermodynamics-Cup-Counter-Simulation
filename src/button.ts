@@ -18,7 +18,7 @@ export class Button {
   constructor(cupCounterModel: object) {
     this.cupCounterModel = cupCounterModel;
 
-    $('#button').on('click', () => {
+    $('#playPauseButton').on('click', () => {
       let state: string = this.cupCounterModel.getState();
       if (state == 'initialized') {
         // the model is initialized so we will now start playing it
@@ -32,11 +32,13 @@ export class Button {
         // the model is paused so we will now resume playing it
         this.cupCounterModel.resume();
         this.showPauseButton();
-      } else if (state == 'completed') {
-        // the model is completed so we will initialize it and start playing it
-        this.cupCounterModel.restart();
-        this.showPauseButton();
       }
+    });
+
+    $('#resetButton').on('click', () => {
+      this.cupCounterModel.reset();
+      this.enablePlayPauseButton();
+      this.showPlayButton();
     });
   }
 
@@ -44,29 +46,36 @@ export class Button {
    * Show the the play icon on the button.
    */
   showPlayButton() {
-    this.setButtonIcon('play_arrow');
+    this.setPlayPauseButtonIcon('play_arrow');
   }
 
   /**
    * Show the pause icon on the button.
    */
   showPauseButton() {
-    this.setButtonIcon('pause');
+    this.setPlayPauseButtonIcon('pause');
   }
 
   /**
-   * Show the restart icon on the button.
+   * Allow the student to click on the play/pause button.
    */
-  showRestartButton() {
-    this.setButtonIcon('replay');
+  enablePlayPauseButton() {
+    $('#playPauseButton').prop('disabled', null);
+  }
+
+  /**
+   * Disallow the student from clicking on the play/pause button.
+   */
+  disablePlayPauseButton() {
+    $('#playPauseButton').prop('disabled', true);
   }
 
   /**
    * Set the material design icon.
    * @param text The text for the material design icon.
    */
-  setButtonIcon(text: string) {
-    $('#buttonIcon').html(text);
+  setPlayPauseButtonIcon(text: string) {
+    $('#playPauseButtonIcon').html(text);
   }
 
   /**
@@ -81,5 +90,12 @@ export class Button {
    */
   modelPlayed() {
     this.showPauseButton();
+  }
+
+  /**
+   * The model is done running.
+   */
+  modelCompleted() {
+    this.disablePlayPauseButton();
   }
 }

@@ -21,7 +21,7 @@ export class Trial {
     this.trial.name = 'Cup and Counter Temperatures';
     this.trial.series = [];
     this.trial.series.push(this.createSeries('Cup', 'red', 'circle'));
-    this.trial.series.push(this.createSeries('Counter', 'blue', 'circle'));
+    this.trial.series.push(this.createSeries('Counter', 'black', 'circle'));
   }
 
   /**

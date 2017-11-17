@@ -25,12 +25,13 @@ export class AnimationHandler {
     this.cupCounterModel = cupCounterModel;
     this.dataPointHandler = new DataPointHandler();
     this.heatAnimations = [];
-    this.draw = SVG('modelDiv').size(300, 200);
+    this.draw = SVG('modelDiv').size(260, 200);
     this.createCup();
     this.createCounter();
     this.createCupThermometer();
     this.createCounterThermometer();
     this.createThermometerTemperatureMarks();
+    this.createDoneMessage();
   }
 
   /**
@@ -207,6 +208,17 @@ export class AnimationHandler {
   }
 
   /**
+   * The done message that we will display when the simulation completes
+   * running.
+   */
+  createDoneMessage() {
+    this.doneText = this.draw.text('Done!');
+    this.doneText.move(160, 25);
+    this.doneText.font(this.getFontObject(16));
+    this.doneText.hide();
+  }
+
+  /**
    * Get an object that contains specifications for a font.
    * @param size The font size.
    * @return A object containing font attributes.
@@ -380,9 +392,21 @@ export class AnimationHandler {
   }
 
   /**
+   * Stop all the animations which consist of the cup movement animation,
+   * heat transfer animations, and thermometer animations.
+   */
+  stopAnimations() {
+    this.cupMovementAnimation.stop();
+    for (let animation of this.heatAnimations) {
+      animation.stop();
+    }
+  }
+
+  /**
    * Reset all the elements back to their original positions and states.
    */
   resetAnimations() {
+
     // set the time back to 0
     this.resetTimeCounter();
 
@@ -392,6 +416,7 @@ export class AnimationHandler {
     this.resetCounterHeatMask();
     this.resetCupThermometerMask();
     this.resetCounterThermometerMask();
+    this.hideDoneMessage();
 
     /*
      * Set the cup and counter temperature displays back to their starting
@@ -457,5 +482,20 @@ export class AnimationHandler {
    */
   setCounterTemperatureReadout(temp) {
     this.counterTemperatureDisplay.text(Math.floor(temp) + '\u00B0C');
+  }
+
+  /**
+   * The model is done running.
+   */
+  modelCompleted() {
+    this.showDoneMessage();
+  }
+
+  showDoneMessage() {
+    this.doneText.show();
+  }
+
+  hideDoneMessage() {
+    this.doneText.hide();
   }
 }
