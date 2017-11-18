@@ -24,6 +24,7 @@ export class AnimationHandler {
     this.time = 0;
     this.cupCounterModel = cupCounterModel;
     this.dataPointHandler = new DataPointHandler();
+    this.cupMovementAnimation = null;
     this.heatAnimations = [];
     this.draw = SVG('modelDiv').size(260, 200);
     this.createCup();
@@ -396,7 +397,9 @@ export class AnimationHandler {
    * heat transfer animations, and thermometer animations.
    */
   stopAnimations() {
-    this.cupMovementAnimation.stop();
+    if (this.cupMovementAnimation != null) {
+      this.cupMovementAnimation.stop();
+    }
     for (let animation of this.heatAnimations) {
       animation.stop();
     }
