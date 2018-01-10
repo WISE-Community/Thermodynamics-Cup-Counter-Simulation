@@ -43,6 +43,6 @@ export class WISEAPI {
    * Send a post message to the parent of the iframe.
    */
   sendMessage(message: any) {
-    parent.postMessage(message, '*');
+    window.postMessage(message, '*');
   }
 }
